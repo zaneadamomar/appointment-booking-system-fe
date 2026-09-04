@@ -15,6 +15,12 @@ export interface AppointmentType {
   durationMinutes: number;
 }
 
+export interface AvailableTimeSlot {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
 export interface Booking {
   id: number;
   userId: number;

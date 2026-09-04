@@ -1,5 +1,5 @@
 import { User } from "../types/user";
-import type { Branch, AppointmentType } from "../types/booking";
+import type { Branch, AppointmentType, AvailableTimeSlot } from "../types/booking";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -50,4 +50,32 @@ export async function getServices(): Promise<AppointmentType[]> {
     }
 
     return response.json();
+}
+
+export async function getAvailableTimeSlots(
+  branchId: string,
+  serviceId: string,
+  bookingDate: string,
+): Promise<AvailableTimeSlot[]> {
+  const response = await fetch(
+    `${API_URL}/api/GetAvailableTimeSlots?BranchId=${encodeURIComponent(
+      branchId,
+    )}&ServiceId=${encodeURIComponent(
+      serviceId,
+    )}&BookingDate=${encodeURIComponent(bookingDate)}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "*/*",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to retrieve available time slots. Status: ${response.status}`,
+    );
+  }
+
+  return response.json();
 }
