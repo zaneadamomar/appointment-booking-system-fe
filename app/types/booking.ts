@@ -9,8 +9,8 @@ export interface Branch {
 }
 
 export interface AppointmentType {
-  id: number;
-  name: string;
+  serviceId: string;
+  serviceName: string;
   description: string;
   durationMinutes: number;
 }

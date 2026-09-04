@@ -1,41 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 
 import AppointmentSelector from "../../components/booking/AppointmentSelector";
 import type { AppointmentType } from "../../types/booking";
-
-const appointmentTypes: AppointmentType[] = [
-  {
-    id: 1,
-    name: "General Inquiry",
-    description:
-      "Have a quick question or need basic account assistance? Our representatives are here to help.",
-    durationMinutes: 30,
-  },
-  {
-    id: 2,
-    name: "Financial Planning",
-    description:
-      "Discuss your long-term goals, investment strategies, and retirement planning with an advisor.",
-    durationMinutes: 60,
-  },
-  {
-    id: 3,
-    name: "Mortgage Services",
-    description:
-      "Explore home loan options, refinancing, or get pre-approved for your next property purchase.",
-    durationMinutes: 60,
-  },
-  {
-    id: 4,
-    name: "Account Management",
-    description:
-      "Open new accounts, update personal information, or resolve complex account-related issues.",
-    durationMinutes: 45,
-  },
-];
+import { getServices } from "../../lib/api";
 
 export default function SelectServicePage() {
   const router = useRouter();
@@ -43,8 +13,33 @@ export default function SelectServicePage() {
 
   const branchId = searchParams.get("branchId");
 
+  const [services, setServices] = useState<AppointmentType[]>([]);
   const [selectedService, setSelectedService] =
     useState<AppointmentType | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Load services from API
+  useEffect(() => {
+    async function loadServices() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getServices();
+
+        setServices(data);
+      } catch (err) {
+        console.error("Failed to load services:", err);
+        setError("Unable to load services. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadServices();
+  }, []);
 
   const handleBack = () => {
     if (branchId) {
@@ -60,7 +55,7 @@ export default function SelectServicePage() {
     }
 
     router.push(
-      `/booking/time?branchId=${branchId}&serviceId=${selectedService.id}`,
+      `/booking/time?branchId=${branchId}&serviceId=${selectedService.serviceId}`,
     );
   };
 
@@ -105,12 +100,79 @@ export default function SelectServicePage() {
           </p>
         </section>
 
+        {/* Loading */}
+        {loading && (
+          <div className="rounded-xl border border-[#e0e3e5] bg-white px-6 py-12 text-center">
+
+            <span className="material-symbols-outlined animate-spin text-4xl text-[#76777d]">
+              progress_activity
+            </span>
+
+            <h3 className="mt-3 text-base font-semibold">
+              Loading services...
+            </h3>
+
+            <p className="mt-1 text-sm text-[#76777d]">
+              Please wait while we load the available services.
+            </p>
+
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div className="rounded-xl border border-[#ffdad6] bg-[#fff5f4] px-6 py-8 text-center">
+
+            <span className="material-symbols-outlined text-4xl text-[#93000a]">
+              error
+            </span>
+
+            <h3 className="mt-3 text-base font-semibold text-[#93000a]">
+              Unable to load services
+            </h3>
+
+            <p className="mt-1 text-sm text-[#45464d]">
+              {error}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-5 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#131b2e]"
+            >
+              Try Again
+            </button>
+
+          </div>
+        )}
+
         {/* Services */}
-        <AppointmentSelector
-          appointments={appointmentTypes}
-          selectedAppointment={selectedService}
-          onSelect={setSelectedService}
-        />
+        {!loading && !error && services.length > 0 && (
+          <AppointmentSelector
+            appointments={services}
+            selectedAppointment={selectedService}
+            onSelect={setSelectedService}
+          />
+        )}
+
+        {/* No services */}
+        {!loading && !error && services.length === 0 && (
+          <div className="rounded-xl border border-[#e0e3e5] bg-white px-6 py-12 text-center">
+
+            <span className="material-symbols-outlined text-4xl text-[#76777d]">
+              event_busy
+            </span>
+
+            <h3 className="mt-3 text-base font-semibold">
+              No services available
+            </h3>
+
+            <p className="mt-1 text-sm text-[#76777d]">
+              There are currently no services available for booking.
+            </p>
+
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -125,7 +187,7 @@ export default function SelectServicePage() {
 
           <button
             type="button"
-            disabled={!selectedService || !branchId}
+            disabled={!selectedService || !branchId || loading}
             onClick={handleContinue}
             className="flex h-12 items-center justify-center rounded-lg bg-black px-7 text-sm font-semibold text-white transition hover:bg-[#131b2e] disabled:cursor-not-allowed disabled:bg-[#e0e3e5] disabled:text-[#76777d]"
           >
@@ -176,10 +238,8 @@ function BookingProgress() {
 
       <div className="relative flex items-start justify-between">
 
-        {/* Background line */}
         <div className="absolute left-[12.5%] right-[12.5%] top-4 h-0.5 bg-[#e0e3e5]" />
 
-        {/* Completed progress */}
         <div className="absolute left-[12.5%] top-4 h-0.5 w-[25%] bg-black" />
 
         {steps.map((step) => (

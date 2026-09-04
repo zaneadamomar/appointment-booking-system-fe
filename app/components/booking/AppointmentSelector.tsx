@@ -8,12 +8,7 @@ interface AppointmentSelectorProps {
   onSelect: (appointment: AppointmentType) => void;
 }
 
-const icons: Record<string, string> = {
-  "General Inquiry": "forum",
-  "Financial Planning": "trending_up",
-  "Mortgage Services": "real_estate_agent",
-  "Account Management": "manage_accounts",
-};
+
 
 export default function AppointmentSelector({
   appointments,
@@ -22,16 +17,13 @@ export default function AppointmentSelector({
 }: AppointmentSelectorProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-
       {appointments.map((appointment) => {
         const selected =
-          selectedAppointment?.id === appointment.id;
-
-        const icon = icons[appointment.name] ?? "event";
+          selectedAppointment?.serviceId === appointment.serviceId;
 
         return (
           <button
-            key={appointment.id}
+            key={appointment.serviceId}
             type="button"
             onClick={() => onSelect(appointment)}
             className={`group relative flex min-h-[230px] flex-col items-start overflow-hidden rounded-xl bg-white p-5 text-left shadow-[0px_4px_12px_rgba(15,23,42,0.05)] transition-all ${
@@ -50,28 +42,11 @@ export default function AppointmentSelector({
                     fontVariationSettings: "'FILL' 1",
                   }}
                 >
-                  check_circle
                 </span>
               </div>
             )}
 
-            {/* Icon */}
-            <div
-              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg transition-colors ${
-                selected
-                  ? "bg-[#dae2fd] text-[#131b2e]"
-                  : "bg-[#e6e8ea] text-black group-hover:bg-[#dae2fd]"
-              }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{
-                  fontVariationSettings: "'FILL' 1",
-                }}
-              >
-                {icon}
-              </span>
-            </div>
+
 
             {/* Name */}
             <h3
@@ -81,7 +56,7 @@ export default function AppointmentSelector({
                   : "text-[#191c1e]"
               }`}
             >
-              {appointment.name}
+              {appointment.serviceName}
             </h3>
 
             {/* Description */}
@@ -105,7 +80,6 @@ export default function AppointmentSelector({
           </button>
         );
       })}
-
     </div>
   );
 }

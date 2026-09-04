@@ -1,5 +1,5 @@
 import { User } from "../types/user";
-import type { Branch } from "../types/booking";
+import type { Branch, AppointmentType } from "../types/booking";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -29,6 +29,23 @@ export async function getBranches(): Promise<Branch[]> {
     if (!response.ok) {
         throw new Error(
             `Failed to retrieve branches. Status: ${response.status}`
+        );
+    }
+
+    return response.json();
+}
+
+export async function getServices(): Promise<AppointmentType[]> {
+    const response = await fetch(`${API_URL}/api/GetService`, {
+        method: "GET",
+        headers: {
+            Accept: "*/*",
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(
+            `Failed to retrieve services. Status: ${response.status}`
         );
     }
 
