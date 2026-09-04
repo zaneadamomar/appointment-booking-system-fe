@@ -1,11 +1,11 @@
 export interface Branch {
-  id: number;
-  name: string;
-  address: string;
-  city: string;
-  postcode: string;
-  open: boolean;
-  distance: string;
+    branchId: string;
+    branchName: string;
+    addressLine1: string;
+    addressLine2: string;
+    city: string;
+    postalCode: string;
+    isActive: boolean;
 }
 
 export interface AppointmentType {

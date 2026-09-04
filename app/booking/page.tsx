@@ -1,56 +1,44 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import BranchSelector from "../components/booking/BranchSelector";
 import type { Branch } from "../types/booking";
-
-const branches: Branch[] = [
-  {
-    id: 1,
-    name: "Durban Branch",
-    address: "123 Smith Street",
-    city: "Durban",
-    postcode: "4001",
-    open: true,
-    distance: "0.8 km away",
-  },
-  {
-    id: 2,
-    name: "Umhlanga Branch",
-    address: "10 Lagoon Drive",
-    city: "Umhlanga",
-    postcode: "4319",
-    open: true,
-    distance: "12.4 km away",
-  },
-  {
-    id: 3,
-    name: "Pietermaritzburg Branch",
-    address: "45 Church Street",
-    city: "Pietermaritzburg",
-    postcode: "3201",
-    open: true,
-    distance: "78.2 km away",
-  },
-  {
-    id: 4,
-    name: "Westville Branch",
-    address: "1 Jan Hofmeyr Road",
-    city: "Westville",
-    postcode: "3629",
-    open: false,
-    distance: "8.5 km away",
-  },
-];
+import { getBranches } from "../lib/api";
 
 export default function BookingPage() {
   const router = useRouter();
 
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [search, setSearch] = useState("");
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Load branches from API
+  useEffect(() => {
+    async function loadBranches() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getBranches();
+
+        setBranches(data);
+      } catch (err) {
+        console.error("Failed to load branches:", err);
+        setError("Unable to load branches. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBranches();
+  }, []);
+
+  // Filter branches
   const filteredBranches = useMemo(() => {
     const value = search.toLowerCase().trim();
 
@@ -60,25 +48,28 @@ export default function BookingPage() {
 
     return branches.filter(
       (branch) =>
-        branch.name.toLowerCase().includes(value) ||
+        branch.branchName.toLowerCase().includes(value) ||
         branch.city.toLowerCase().includes(value) ||
-        branch.postcode.toLowerCase().includes(value),
+        branch.postalCode.toLowerCase().includes(value),
     );
-  }, [search]);
+  }, [search, branches]);
 
-const handleContinue = () => {
-  if (!selectedBranch) {
-    return;
-  }
+  // Continue to service selection
+  const handleContinue = () => {
+    if (!selectedBranch) {
+      return;
+    }
 
-  router.push(`/booking/service?branchId=${selectedBranch.id}`);
-};
+    router.push(`/booking/service?branchId=${selectedBranch.branchId}`);
+  };
+
   return (
     <main className="min-h-screen bg-[#f7f9fb] text-[#191c1e]">
 
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-[#e0e3e5] bg-white">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 md:px-6">
+
           <button
             type="button"
             onClick={() => router.back()}
@@ -93,6 +84,7 @@ const handleContinue = () => {
           <h1 className="text-base font-bold tracking-tight text-black">
             Branch Booking
           </h1>
+
         </div>
       </header>
 
@@ -115,6 +107,7 @@ const handleContinue = () => {
         {/* Search */}
         <section className="mb-6">
           <div className="relative">
+
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#76777d]">
               search
             </span>
@@ -124,10 +117,11 @@ const handleContinue = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by branch, city or postcode"
-              className="h-14 w-full rounded-lg border border-[#c6c6cd] bg-white pl-12 pr-12 text-sm text-[#191c1e] outline-none transition placeholder:text-[#76777d] focus:border-black focus:ring-1 focus:ring-black"
+              disabled={loading || !!error}
+              className="h-14 w-full rounded-lg border border-[#c6c6cd] bg-white pl-12 pr-12 text-sm text-[#191c1e] outline-none transition placeholder:text-[#76777d] focus:border-black focus:ring-1 focus:ring-black disabled:cursor-not-allowed disabled:bg-[#f1f2f4]"
             />
 
-            {search && (
+            {search && !loading && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
@@ -139,19 +133,69 @@ const handleContinue = () => {
                 </span>
               </button>
             )}
+
           </div>
         </section>
 
+        {/* Loading */}
+        {loading && (
+          <div className="rounded-xl border border-[#e0e3e5] bg-white px-6 py-12 text-center">
+
+            <span className="material-symbols-outlined animate-spin text-4xl text-[#76777d]">
+              progress_activity
+            </span>
+
+            <h3 className="mt-3 text-base font-semibold">
+              Loading branches...
+            </h3>
+
+            <p className="mt-1 text-sm text-[#76777d]">
+              Please wait while we load the available branches.
+            </p>
+
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div className="rounded-xl border border-[#ffdad6] bg-[#fff5f4] px-6 py-8 text-center">
+
+            <span className="material-symbols-outlined text-4xl text-[#93000a]">
+              error
+            </span>
+
+            <h3 className="mt-3 text-base font-semibold text-[#93000a]">
+              Unable to load branches
+            </h3>
+
+            <p className="mt-1 text-sm text-[#45464d]">
+              {error}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-5 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#131b2e]"
+            >
+              Try Again
+            </button>
+
+          </div>
+        )}
+
         {/* Branches */}
-        <BranchSelector
-          branches={filteredBranches}
-          selectedBranch={selectedBranch}
-          onSelect={setSelectedBranch}
-        />
+        {!loading && !error && (
+          <BranchSelector
+            branches={filteredBranches}
+            selectedBranch={selectedBranch}
+            onSelect={setSelectedBranch}
+          />
+        )}
 
         {/* No results */}
-        {filteredBranches.length === 0 && (
+        {!loading && !error && filteredBranches.length === 0 && (
           <div className="rounded-xl border border-[#e0e3e5] bg-white px-6 py-12 text-center">
+
             <span className="material-symbols-outlined text-4xl text-[#76777d]">
               location_off
             </span>
@@ -163,29 +207,27 @@ const handleContinue = () => {
             <p className="mt-1 text-sm text-[#76777d]">
               Try searching for another branch or city.
             </p>
+
           </div>
         )}
 
         {/* Continue */}
         <div className="mt-8 flex justify-end">
+
           <button
             type="button"
-            disabled={!selectedBranch}
+            disabled={!selectedBranch || loading || !!error}
             onClick={handleContinue}
             className="flex h-12 items-center justify-center rounded-lg bg-black px-7 text-sm font-semibold text-white transition hover:bg-[#131b2e] disabled:cursor-not-allowed disabled:bg-[#e0e3e5] disabled:text-[#76777d]"
           >
             Continue
 
-            <span className="material-symbols-outlined ml-2 text-[18px]">
-              arrow_forward
-            </span>
           </button>
+
         </div>
 
       </div>
 
-      {/* Mobile bottom navigation */}
-      <MobileBookingNavigation />
     </main>
   );
 }
@@ -200,6 +242,7 @@ function BookingProgress() {
 
   return (
     <div className="my-4 rounded-xl bg-white px-4 py-5 shadow-[0px_4px_12px_rgba(15,23,42,0.05)] md:my-6 md:px-6">
+
       <div className="relative flex items-start justify-between">
 
         {/* Background line */}
@@ -216,6 +259,7 @@ function BookingProgress() {
               key={step.number}
               className="relative z-10 flex flex-col items-center"
             >
+
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
                   active
@@ -233,61 +277,13 @@ function BookingProgress() {
               >
                 {step.label}
               </span>
+
             </div>
           );
         })}
+
       </div>
     </div>
   );
 }
 
-function MobileBookingNavigation() {
-  return (
-    <nav className="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t border-[#e0e3e5] bg-white px-4 shadow-[0px_-4px_12px_rgba(15,23,42,0.05)] md:hidden">
-
-      <div className="flex flex-col items-center justify-center rounded-full bg-[#6cf8bb] px-4 py-1 text-[#005236]">
-        <span
-          className="material-symbols-outlined"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          location_on
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Branches
-        </span>
-      </div>
-
-      <div className="flex flex-col items-center justify-center p-2 text-[#76777d]">
-        <span className="material-symbols-outlined">
-          settings_suggest
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Services
-        </span>
-      </div>
-
-      <div className="flex flex-col items-center justify-center p-2 text-[#76777d]">
-        <span className="material-symbols-outlined">
-          calendar_month
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Schedule
-        </span>
-      </div>
-
-      <div className="flex flex-col items-center justify-center p-2 text-[#76777d]">
-        <span className="material-symbols-outlined">
-          check_circle
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Confirm
-        </span>
-      </div>
-
-    </nav>
-  );
-}

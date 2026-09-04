@@ -1,193 +1,212 @@
-import Link from "next/link";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { User } from "../types/user";
 
 export default function DashboardPage() {
-  return (
-    <main className="min-h-screen bg-[#f7f9fb]">
-      <header className="sticky top-0 z-50 flex h-16 items-center border-b border-gray-200 bg-white px-6">
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold text-gray-900">
-            Branch Booking
-          </h1>
-        </div>
+    const router = useRouter();
 
-        <div className="flex items-center gap-4">
-          <button className="rounded-full p-2 hover:bg-gray-100">
-            🔔
-          </button>
+    const [user, setUser] = useState<User | null>(null);
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-            Z
-          </div>
-        </div>
-      </header>
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem("currentUser");
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
+        if (!storedUser) {
+            router.replace("/login");
+            return;
+        }
 
-        {/* Welcome */}
-        <section className="mb-8">
-          <p className="text-sm text-gray-500">
-            Welcome back
-          </p>
+        try {
+            const parsedUser: User = JSON.parse(storedUser);
+            setUser(parsedUser);
+        } catch (error) {
+            console.error("Invalid stored user:", error);
 
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-gray-900">
-            Good afternoon, Zane
-          </h2>
+            sessionStorage.removeItem("currentUser");
+            router.replace("/login");
+        }
+    }, [router]);
 
-          <p className="mt-2 text-gray-600">
-            Manage your branch appointments and upcoming bookings.
-          </p>
-        </section>
+    const handleLogout = () => {
+        sessionStorage.removeItem("currentUser");
+        router.push("/login");
+    };
 
-        {/* Book Appointment */}
-        <section className="mb-8 overflow-hidden rounded-xl bg-[#131b2e] p-8 text-white shadow-lg">
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+    // Don't render the dashboard until we've checked the session
+    if (!user) {
+        return (
+            <main className="min-h-screen bg-[#f7f9fb] flex items-center justify-center">
+                <div className="text-sm text-[#45464d]">
+                    Loading...
+                </div>
+            </main>
+        );
+    }
 
-            <div>
-              <h2 className="text-xl font-semibold">
-                Schedule an Appointment
-              </h2>
+    const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
 
-              <p className="mt-2 max-w-lg text-sm text-gray-300">
-                Choose a branch, appointment type, date and available
-                time to make your booking.
-              </p>
-            </div>
+    return (
+        <main className="min-h-screen bg-[#f7f9fb] text-[#191c1e]">
 
-            <Link
-              href="/booking"
-              className="rounded-lg bg-[#6ffbbe] px-6 py-3 text-sm font-semibold text-[#002113] transition hover:bg-[#4edea3]"
-            >
-              Book Appointment
-            </Link>
+            {/* Navbar */}
+            <nav className="bg-white border-b border-[#e5e7eb]">
 
-          </div>
-        </section>
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-        {/* Upcoming Appointment */}
-        <section className="mb-8">
+                    {/* Logo */}
+                    <div className="flex items-center gap-3">
 
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Upcoming Appointment
-            </h2>
+                        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+                            <span
+                                className="material-symbols-outlined text-white"
+                                style={{
+                                    fontSize: "22px",
+                                    fontVariationSettings: "'FILL' 1",
+                                }}
+                            >
+                                shield
+                            </span>
+                        </div>
 
-            <Link
-              href="/bookings"
-              className="text-sm font-medium text-[#006c49] hover:underline"
-            >
-              View all
-            </Link>
-          </div>
+                        <div>
+                            <h1 className="font-bold text-lg text-black">
+                                Reliant
+                            </h1>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <p className="text-xs text-[#76777d]">
+                                Appointment System
+                            </p>
+                        </div>
 
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                    </div>
 
-              <div className="flex gap-4">
+                    {/* User */}
+                    <div className="flex items-center gap-4">
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
-                  📅
+                        <div className="hidden sm:block text-right">
+                            <p className="text-sm font-semibold">
+                                {user.firstName} {user.lastName}
+                            </p>
+
+                            <p className="text-xs text-[#76777d]">
+                                {user.email}
+                            </p>
+                        </div>
+
+                        {/* User Avatar */}
+                        <div className="w-10 h-10 rounded-full bg-[#131b2e] text-white flex items-center justify-center">
+                            <span className="text-sm font-semibold">
+                                {initials}
+                            </span>
+                        </div>
+
+                        {/* Logout */}
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg text-[#45464d] hover:bg-[#f1f2f4] hover:text-black transition-colors"
+                            title="Logout"
+                        >
+                            <span
+                                className="material-symbols-outlined"
+                                style={{ fontSize: "22px" }}
+                            >
+                                logout
+                            </span>
+                        </button>
+
+                    </div>
+
                 </div>
 
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    Account Consultation
-                  </h3>
+            </nav>
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    Durban Branch
-                  </p>
+            {/* Dashboard */}
+            <div className="max-w-7xl mx-auto px-6 py-8">
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    15 September 2026 · 10:30 - 11:00
-                  </p>
+                {/* Welcome */}
+                <div className="mb-8">
+
+                    <h2 className="text-2xl md:text-3xl font-bold">
+                        Welcome back, {user.firstName}
+                    </h2>
+
+                    <p className="text-[#76777d] mt-2">
+                        Manage your appointments and bookings.
+                    </p>
+
                 </div>
 
-              </div>
+                {/* Dashboard content */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-              <span className="w-fit rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                Confirmed
-              </span>
+                    {/* Book Appointment */}
+                    <button
+                        onClick={() => router.push("/booking")}
+                        className="text-left bg-white rounded-xl border border-[#e5e7eb] p-6 hover:shadow-md transition-shadow"
+                    >
+                        <div className="w-12 h-12 rounded-lg bg-[#131b2e] text-white flex items-center justify-center mb-5">
+                            <span className="material-symbols-outlined">
+                                calendar_month
+                            </span>
+                        </div>
+
+                        <h3 className="text-lg font-semibold mb-2">
+                            Book an Appointment
+                        </h3>
+
+                        <p className="text-sm text-[#76777d]">
+                            Schedule a new appointment at one of our branches.
+                        </p>
+                    </button>
+
+                    {/* My Appointments */}
+                    <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
+
+                        <div className="w-12 h-12 rounded-lg bg-[#eef1f5] flex items-center justify-center mb-5">
+                            <span className="material-symbols-outlined text-[#131b2e]">
+                                event
+                            </span>
+                        </div>
+
+                        <h3 className="text-lg font-semibold mb-2">
+                            My Appointments
+                        </h3>
+
+                        <p className="text-sm text-[#76777d]">
+                            View and manage your upcoming appointments.
+                        </p>
+
+                    </div>
+
+                    {/* Account */}
+                    <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
+
+                        <div className="w-12 h-12 rounded-lg bg-[#eef1f5] flex items-center justify-center mb-5">
+                            <span className="material-symbols-outlined text-[#131b2e]">
+                                account_circle
+                            </span>
+                        </div>
+
+                        <h3 className="text-lg font-semibold mb-2">
+                            My Account
+                        </h3>
+
+                        <p className="text-sm text-[#76777d]">
+                            {user.firstName} {user.lastName}
+                        </p>
+
+                        <p className="text-sm text-[#76777d] mt-1">
+                            {user.email}
+                        </p>
+
+                    </div>
+
+                </div>
 
             </div>
 
-          </div>
-
-        </section>
-
-        {/* Recent Bookings */}
-        <section>
-
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
-            Recent Bookings
-          </h2>
-
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-
-            <div className="divide-y divide-gray-100">
-
-              <BookingRow
-                appointment="Account Consultation"
-                branch="Durban Branch"
-                date="15 September 2026"
-                status="Confirmed"
-              />
-
-              <BookingRow
-                appointment="Mortgage Consultation"
-                branch="Umhlanga Branch"
-                date="20 September 2026"
-                status="Confirmed"
-              />
-
-              <BookingRow
-                appointment="Financial Planning"
-                branch="Pietermaritzburg Branch"
-                date="28 August 2026"
-                status="Completed"
-              />
-
-            </div>
-
-          </div>
-
-        </section>
-
-      </div>
-    </main>
-  );
-}
-
-interface BookingRowProps {
-  appointment: string;
-  branch: string;
-  date: string;
-  status: string;
-}
-
-function BookingRow({
-  appointment,
-  branch,
-  date,
-  status,
-}: BookingRowProps) {
-  return (
-    <div className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
-
-      <div>
-        <p className="font-medium text-gray-900">
-          {appointment}
-        </p>
-
-        <p className="mt-1 text-sm text-gray-500">
-          {branch} · {date}
-        </p>
-      </div>
-
-      <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-        {status}
-      </span>
-
-    </div>
-  );
+        </main>
+    );
 }
