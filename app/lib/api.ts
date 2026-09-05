@@ -1,5 +1,5 @@
 import { User } from "../types/user";
-import type { Branch, AppointmentType, AvailableTimeSlot } from "../types/booking";
+import type { Branch, AppointmentType, AvailableTimeSlot, CreateBookingRequest, CreateBookingResponse } from "../types/booking";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -78,4 +78,25 @@ export async function getAvailableTimeSlots(
   }
 
   return response.json();
+}
+
+export async function createBooking(
+    booking: CreateBookingRequest
+): Promise<CreateBookingResponse> {
+    const response = await fetch(`${API_URL}/api/CreateBooking`, {
+        method: "POST",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(booking),
+    });
+
+    if (!response.ok) {
+        throw new Error(
+            `Failed to create booking. Status: ${response.status}`
+        );
+    }
+
+    return response.json();
 }

@@ -31,3 +31,17 @@ export interface Booking {
   endTime: string;
   status: "Confirmed" | "Completed" | "Cancelled";
 }
+
+export interface CreateBookingRequest {
+    userId: string;
+    branchId: string;
+    serviceId: string;
+    bookingDate: string;
+    startTime: string;
+}
+
+export interface CreateBookingResponse {
+    bookingId: string;
+    resultMessage: string;
+    resultCode: number;
+}

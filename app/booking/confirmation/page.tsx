@@ -1,74 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  getBranches,
+  getServices,
+  createBooking,
+} from "../../lib/api";
+import type {
+  Branch,
+  AppointmentType,
+  CreateBookingResponse,
+} from "../../types/booking";
 
-interface Branch {
-  id: number;
-  name: string;
-  address: string;
-}
-
-interface AppointmentType {
-  id: number;
-  name: string;
-  description: string;
-  durationMinutes: number;
-}
-
-const branches: Branch[] = [
-  {
-    id: 1,
-    name: "Durban Branch",
-    address: "123 Smith Street, Durban, 4001",
-  },
-  {
-    id: 2,
-    name: "Umhlanga Branch",
-    address: "10 Lagoon Drive, Umhlanga, 4319",
-  },
-  {
-    id: 3,
-    name: "Pietermaritzburg Branch",
-    address: "45 Church Street, Pietermaritzburg, 3201",
-  },
-  {
-    id: 4,
-    name: "Westville Branch",
-    address: "1 Jan Hofmeyr Road, Westville, 3629",
-  },
-];
-
-const appointmentTypes: AppointmentType[] = [
-  {
-    id: 1,
-    name: "General Inquiry",
-    description:
-      "Have a quick question or need basic account assistance?",
-    durationMinutes: 30,
-  },
-  {
-    id: 2,
-    name: "Financial Planning",
-    description:
-      "Discuss your long-term goals, investment strategies, and retirement planning.",
-    durationMinutes: 60,
-  },
-  {
-    id: 3,
-    name: "Mortgage Services",
-    description:
-      "Explore home loan options, refinancing, or get pre-approved.",
-    durationMinutes: 60,
-  },
-  {
-    id: 4,
-    name: "Account Management",
-    description:
-      "Open new accounts, update personal information, or resolve account issues.",
-    durationMinutes: 45,
-  },
-];
 
 export default function ConfirmationPage() {
   const router = useRouter();
@@ -79,65 +23,191 @@ export default function ConfirmationPage() {
   const date = searchParams.get("date");
   const time = searchParams.get("time");
 
+  const [branch, setBranch] = useState<Branch | null>(null);
+  const [service, setService] = useState<AppointmentType | null>(null);
+  const [booking, setBooking] =
+    useState<CreateBookingResponse | null>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const branch = branches.find(
-    (item) => item.id === Number(branchId),
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const service = appointmentTypes.find(
-    (item) => item.id === Number(serviceId),
-  );
+    const createNewBooking = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  /*
-   * Temporary reference number.
-   *
-   * When the API is implemented this will come from
-   * the booking response instead.
-   */
-  const referenceNumber = "BRC-" + generateReference();
+        if (!branchId || !serviceId || !date || !time) {
+          throw new Error(
+            "Booking information is missing. Please start the booking process again."
+          );
+        }
 
-  if (!branch || !service || !date || !time) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f7f9fb] px-4">
-        <div className="w-full max-w-md rounded-xl border border-[#e0e3e5] bg-white p-8 text-center shadow-sm">
+        const branches: Branch[] = await getBranches();
 
-          <span className="material-symbols-outlined text-5xl text-[#76777d]">
-            error
-          </span>
+        const selectedBranch = branches.find(
+          (item) =>
+            item.branchId.toLowerCase() ===
+            branchId.toLowerCase()
+        );
 
-          <h1 className="mt-4 text-xl font-semibold">
-            Booking information is missing
-          </h1>
+        if (!selectedBranch) {
+          throw new Error(
+            "The selected branch could not be found."
+          );
+        }
 
-          <p className="mt-2 text-sm text-[#76777d]">
-            We couldn't find the details for this booking.
-            Please start the booking process again.
-          </p>
+        if (!selectedBranch.isActive) {
+          throw new Error(
+            "The selected branch is no longer active."
+          );
+        }
 
-          <button
-            type="button"
-            onClick={() => router.push("/booking")}
-            className="mt-6 h-12 rounded-lg bg-black px-7 text-sm font-semibold text-white transition hover:opacity-90"
-          >
-            Start New Booking
-          </button>
+        const services: AppointmentType[] = await getServices();
 
-        </div>
-      </main>
-    );
-  }
+        const selectedService = services.find(
+          (item) =>
+            item.serviceId.toLowerCase() ===
+            serviceId.toLowerCase()
+        );
 
-  const formattedDate = formatDate(date);
+        if (!selectedService) {
+          throw new Error(
+            "The selected service could not be found or is inactive."
+          );
+        }
 
-  const endTime = calculateEndTime(
+        if (!cancelled) {
+          setBranch(selectedBranch);
+          setService(selectedService);
+        }
+
+        const storedUser =
+          sessionStorage.getItem("currentUser");
+
+        const currentUser = storedUser
+          ? JSON.parse(storedUser)
+          : null;
+
+        const userId = currentUser?.userId;
+
+        if (!userId) {
+          throw new Error(
+            "Unable to identify the logged-in user. Please log in again."
+          );
+        }
+
+        const endTimeValue = calculateEndTime(
+          time,
+          selectedService.durationMinutes
+        );
+
+        const bookingDate = `${date}T00:00:00`;
+
+        const startTime = `${date}T${time}:00`;
+
+        const endTime = `${date}T${endTimeValue}:00`;
+
+        const newBookingId = crypto.randomUUID();
+
+        const requestBody = {
+          bookingId: newBookingId,
+
+          userId: userId,
+
+          branchId: selectedBranch.branchId,
+
+          branchName: selectedBranch.branchName,
+
+          serviceId: selectedService.serviceId,
+
+          serviceName: selectedService.serviceName,
+
+          durationMinutes:
+            selectedService.durationMinutes,
+
+          bookingDate: bookingDate,
+
+          startTime: startTime,
+
+          endTime: endTime,
+
+          statusId: 1,
+
+          status: "Booked",
+
+          createdDate: new Date().toISOString(),
+        };
+
+        console.log(
+          "CreateBooking Request:",
+          requestBody
+        );
+        const result: CreateBookingResponse =
+          await createBooking(requestBody);
+
+        console.log(
+          "CreateBooking Response:",
+          result
+        );
+
+        if (
+          result.resultCode !== 0 ||
+          !result.bookingId
+        ) {
+          throw new Error(
+            result.resultMessage ||
+            "The booking could not be created."
+          );
+        }
+
+        if (!cancelled) {
+          setBooking(result);
+        }
+      } catch (err) {
+        console.error(
+          "Booking creation error:",
+          err
+        );
+
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to create your booking."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    createNewBooking();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    branchId,
+    serviceId,
+    date,
     time,
-    service.durationMinutes,
-  );
+  ]);
 
   const handleCopyReference = async () => {
+    if (!booking?.bookingId) {
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(referenceNumber);
+      await navigator.clipboard.writeText(
+        booking.bookingId
+      );
 
       setCopied(true);
 
@@ -145,40 +215,82 @@ export default function ConfirmationPage() {
         setCopied(false);
       }, 2000);
     } catch {
-      console.error("Unable to copy reference number.");
+      console.error(
+        "Unable to copy reference number."
+      );
     }
   };
 
   const handleAddToCalendar = () => {
-    const startDate = `${date.replaceAll("-", "")}T${time.replace(":", "")}00`;
+    if (
+      !booking?.bookingId ||
+      !branch ||
+      !service ||
+      !date ||
+      !time
+    ) {
+      return;
+    }
 
-    const endDate = `${date.replaceAll("-", "")}T${endTime.replace(":", "")}00`;
+    const endTime = calculateEndTime(
+      time,
+      service.durationMinutes
+    );
+
+    const startDate =
+      `${date.replaceAll("-", "")}T${time.replace(
+        ":",
+        ""
+      )}00`;
+
+    const endDate =
+      `${date.replaceAll("-", "")}T${endTime.replace(
+        ":",
+        ""
+      )}00`;
+
+    const location = [
+      branch.branchName,
+      branch.addressLine1,
+      branch.addressLine2,
+      branch.city,
+      branch.postalCode,
+    ]
+      .filter(Boolean)
+      .join(", ");
 
     const calendarContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
       "PRODID:-//Branch Booking//Appointment//EN",
       "BEGIN:VEVENT",
-      `UID:${referenceNumber}@branch-booking`,
+      `UID:${booking.bookingId}@branch-booking`,
       `DTSTART:${startDate}`,
       `DTEND:${endDate}`,
-      `SUMMARY:${service.name}`,
-      `LOCATION:${branch.name}, ${branch.address}`,
-      `DESCRIPTION:Booking Reference: ${referenceNumber}`,
+      `SUMMARY:${service.serviceName}`,
+      `LOCATION:${location}`,
+      `DESCRIPTION:Booking Reference: ${booking.bookingId}`,
       "END:VEVENT",
       "END:VCALENDAR",
     ].join("\r\n");
 
-    const blob = new Blob([calendarContent], {
-      type: "text/calendar;charset=utf-8",
-    });
+    const blob = new Blob(
+      [calendarContent],
+      {
+        type: "text/calendar;charset=utf-8",
+      }
+    );
 
-    const url = URL.createObjectURL(blob);
+    const url =
+      URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const link =
+      document.createElement("a");
 
     link.href = url;
-    link.download = `appointment-${referenceNumber}.ics`;
+
+    link.download =
+      `appointment-${booking.bookingId}.ics`;
 
     document.body.appendChild(link);
 
@@ -189,39 +301,119 @@ export default function ConfirmationPage() {
     URL.revokeObjectURL(url);
   };
 
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f9fb] px-4">
+        <div className="w-full max-w-md rounded-xl border border-[#e0e3e5] bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f8f1]">
+            <span className="material-symbols-outlined animate-spin text-[32px] text-[#006c49]">
+              progress_activity
+            </span>
+          </div>
+
+          <h1 className="mt-6 text-xl font-semibold text-black">
+            Confirming your appointment...
+          </h1>
+
+          <p className="mt-2 text-sm leading-6 text-[#76777d]">
+            Please wait while we create your
+            booking.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !booking?.bookingId) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f9fb] px-4">
+        <div className="w-full max-w-md rounded-xl border border-[#e0e3e5] bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#feecec]">
+            <span className="material-symbols-outlined text-[36px] text-[#b42318]">
+              error
+            </span>
+          </div>
+
+          <h1 className="mt-5 text-xl font-semibold text-black">
+            Booking Could Not Be Created
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-[#76777d]">
+            {error ||
+              "We were unable to create your appointment."}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push("/booking")
+            }
+            className="mt-6 h-12 rounded-lg bg-black px-7 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Start New Booking
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const formattedDate = date
+    ? formatDate(date)
+    : "";
+
+  const endTime =
+    time && service
+      ? calculateEndTime(
+        time,
+        service.durationMinutes
+      )
+      : "";
+
+  const branchAddress = branch
+    ? [
+      branch.addressLine1,
+      branch.addressLine2,
+      branch.city,
+      branch.postalCode,
+    ]
+      .filter(Boolean)
+      .join(", ")
+    : "";
+
   return (
     <main className="min-h-screen bg-[#f7f9fb] px-4 py-12 text-[#191c1e] md:py-24">
-
       <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
 
         {/* Success Icon */}
-        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#6cf8bb] shadow-lg">
 
+        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#6cf8bb] shadow-lg">
           <span
             className="material-symbols-outlined text-[48px] text-[#006c49]"
             style={{
-              fontVariationSettings: "'FILL' 1",
+              fontVariationSettings:
+                "'FILL' 1",
             }}
           >
             check_circle
           </span>
-
         </div>
 
         {/* Heading */}
+
         <h1 className="mb-2 text-2xl font-bold tracking-tight text-black md:text-[32px]">
           Appointment Confirmed!
         </h1>
 
         <p className="mb-8 max-w-md text-base leading-6 text-[#45464d]">
-          Your booking has been successfully scheduled.
-          Please keep your booking reference for your records.
+          Your booking has been successfully
+          scheduled. Please keep your booking
+          reference for your records.
         </p>
 
         {/* Summary Card */}
+
         <section className="mb-8 w-full rounded-xl border border-[#e0e3e5] bg-white p-6 text-left shadow-[0px_4px_12px_rgba(15,23,42,0.05)] md:p-8">
 
-          {/* Card Header */}
           <div className="mb-6 border-b border-[#e0e3e5] pb-4">
             <h2 className="text-base font-semibold text-black">
               Booking Summary
@@ -229,94 +421,106 @@ export default function ConfirmationPage() {
           </div>
 
           {/* Reference */}
-          <div className="mb-6 flex items-start justify-between gap-4">
 
+          <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#76777d]">
                 Reference Number
               </p>
 
-              <p className="text-base font-medium text-black">
-                #{referenceNumber}
+              <p className="break-all text-base font-medium text-black">
+                #{booking.bookingId}
               </p>
             </div>
 
             <button
               type="button"
-              onClick={handleCopyReference}
-              className="flex items-center gap-1 rounded px-2 py-1 text-sm font-medium text-[#006c49] transition hover:bg-[#f2f4f6]"
+              onClick={
+                handleCopyReference
+              }
+              className="flex shrink-0 items-center gap-1 rounded px-2 py-1 text-sm font-medium text-[#006c49] transition hover:bg-[#f2f4f6]"
             >
               <span className="material-symbols-outlined text-[18px]">
-                {copied ? "check" : "content_copy"}
+                {copied
+                  ? "check"
+                  : "content_copy"}
               </span>
 
-              {copied ? "Copied" : "Copy"}
+              {copied
+                ? "Copied"
+                : "Copy"}
             </button>
-
           </div>
 
-          {/* Booking Details */}
+          {/* Details */}
+
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
-            {/* Service */}
             <BookingDetail
               label="Service Type"
               icon="settings_suggest"
-              value={service.name}
+              value={
+                service?.serviceName ||
+                ""
+              }
             />
 
-            {/* Branch */}
             <BookingDetail
               label="Branch"
               icon="location_on"
-              value={branch.name}
+              value={
+                branch?.branchName ||
+                ""
+              }
             />
 
-            {/* Date */}
             <BookingDetail
               label="Date"
               icon="calendar_month"
               value={formattedDate}
             />
 
-            {/* Time */}
             <BookingDetail
               label="Time"
               icon="schedule"
-              value={`${formatTime(time)} - ${formatTime(endTime)}`}
+              value={`${formatTime(
+                time || ""
+              )} - ${formatTime(
+                endTime
+              )}`}
             />
 
           </div>
 
           {/* Address */}
-          <div className="mt-6 border-t border-[#e0e3e5] pt-6">
 
+          <div className="mt-6 border-t border-[#e0e3e5] pt-6">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#76777d]">
               Branch Address
             </p>
 
             <div className="flex items-start gap-2">
-
               <span className="material-symbols-outlined text-[20px] text-[#006c49]">
                 location_on
               </span>
 
               <p className="text-sm text-[#191c1e]">
-                {branch.address}
+                {branchAddress}
               </p>
-
             </div>
-
           </div>
 
         </section>
 
         {/* Actions */}
+
         <div className="flex w-full flex-col gap-3 md:flex-row md:justify-center">
 
           <button
             type="button"
-            onClick={handleAddToCalendar}
+            onClick={
+              handleAddToCalendar
+            }
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-[#76777d] bg-white px-6 text-sm font-semibold text-black transition hover:bg-[#e6e8ea] md:w-auto"
           >
             <span className="material-symbols-outlined">
@@ -328,7 +532,9 @@ export default function ConfirmationPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/dashboard")}
+            onClick={() =>
+              router.push("/dashboard")
+            }
             className="h-12 w-full rounded-full bg-[#131b2e] px-6 text-sm font-semibold text-white transition hover:opacity-90 md:w-auto"
           >
             Return to Home
@@ -337,14 +543,9 @@ export default function ConfirmationPage() {
         </div>
 
       </div>
-
     </main>
   );
 }
-
-/* ---------------------------------------------------------
-   Booking Detail
---------------------------------------------------------- */
 
 interface BookingDetailProps {
   label: string;
@@ -359,78 +560,109 @@ function BookingDetail({
 }: BookingDetailProps) {
   return (
     <div>
-
       <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#76777d]">
         {label}
       </p>
 
       <p className="flex items-center gap-2 text-sm text-[#191c1e]">
-
         <span className="material-symbols-outlined text-[20px] text-black">
           {icon}
         </span>
 
         {value}
-
       </p>
-
     </div>
   );
 }
 
-/* ---------------------------------------------------------
-   Formatting
---------------------------------------------------------- */
+function formatDate(
+  dateString: string
+) {
+  const [
+    year,
+    month,
+    day,
+  ] = dateString
+    .split("-")
+    .map(Number);
 
-function formatDate(dateString: string) {
-  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(
+    year,
+    month - 1,
+    day
+  );
 
-  const date = new Date(year, month - 1, day);
-
-  return date.toLocaleDateString("en-ZA", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return date.toLocaleDateString(
+    "en-ZA",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  );
 }
 
-function formatTime(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
+function formatTime(
+  time: string
+) {
+  if (!time) {
+    return "";
+  }
 
-  const period = hours >= 12 ? "PM" : "AM";
-  const displayHour = hours % 12 || 12;
+  const [
+    hours,
+    minutes,
+  ] = time
+    .split(":")
+    .map(Number);
 
-  return `${displayHour}:${String(minutes).padStart(2, "0")} ${period}`;
+  const period =
+    hours >= 12 ? "PM" : "AM";
+
+  const displayHour =
+    hours % 12 || 12;
+
+  return `${displayHour}:${String(
+    minutes
+  ).padStart(
+    2,
+    "0"
+  )} ${period}`;
 }
 
 function calculateEndTime(
   startTime: string,
-  durationMinutes: number,
+  durationMinutes: number
 ) {
-  const [hours, minutes] = startTime.split(":").map(Number);
+  const [
+    hours,
+    minutes,
+  ] = startTime
+    .split(":")
+    .map(Number);
 
-  const date = new Date();
+  const totalMinutes =
+    hours * 60 +
+    minutes +
+    durationMinutes;
 
-  date.setHours(hours);
-  date.setMinutes(minutes + durationMinutes);
-  date.setSeconds(0);
-  date.setMilliseconds(0);
+  const endHours =
+    Math.floor(
+      totalMinutes / 60
+    ) % 24;
 
-  return `${String(date.getHours()).padStart(2, "0")}:${String(
-    date.getMinutes(),
-  ).padStart(2, "0")}`;
-}
+  const endMinutes =
+    totalMinutes % 60;
 
-function generateReference() {
-  const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-  let result = "";
-
-  for (let i = 0; i < 8; i++) {
-    result += characters.charAt(
-      Math.floor(Math.random() * characters.length),
-    );
-  }
-
-  return result;
+  return `${String(
+    endHours
+  ).padStart(
+    2,
+    "0"
+  )}:${String(
+    endMinutes
+  ).padStart(
+    2,
+    "0"
+  )}`;
 }

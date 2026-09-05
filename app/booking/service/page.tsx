@@ -202,9 +202,6 @@ export default function SelectServicePage() {
 
       </div>
 
-      {/* Mobile navigation */}
-      <MobileBookingNavigation />
-
     </main>
   );
 }
@@ -284,56 +281,5 @@ function BookingProgress() {
       </div>
 
     </div>
-  );
-}
-
-function MobileBookingNavigation() {
-  return (
-    <nav className="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t border-[#e0e3e5] bg-white px-4 shadow-[0px_-4px_12px_rgba(15,23,42,0.05)] md:hidden">
-
-      <div className="flex flex-col items-center justify-center p-2 text-[#76777d]">
-        <span className="material-symbols-outlined">
-          location_on
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Branches
-        </span>
-      </div>
-
-      <div className="flex flex-col items-center justify-center rounded-full bg-[#6cf8bb] px-4 py-1 text-[#005236]">
-        <span
-          className="material-symbols-outlined"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          settings_suggest
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Services
-        </span>
-      </div>
-
-      <div className="flex flex-col items-center justify-center p-2 text-[#76777d]">
-        <span className="material-symbols-outlined">
-          calendar_month
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Schedule
-        </span>
-      </div>
-
-      <div className="flex flex-col items-center justify-center p-2 text-[#76777d]">
-        <span className="material-symbols-outlined">
-          check_circle
-        </span>
-
-        <span className="mt-1 text-[10px] font-semibold">
-          Confirm
-        </span>
-      </div>
-
-    </nav>
   );
 }
