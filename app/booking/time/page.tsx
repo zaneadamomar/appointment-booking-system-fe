@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import BookingProgress from "../../components/bookingprogress";
 import DateSelector from "../../components/booking/DateSelector";
 import TimeSelector from "../../components/booking/TimeSelector";
 
@@ -106,11 +106,6 @@ export default function SelectTimePage() {
     loadBookingInfo();
   }, [branchId, serviceId]);
 
-  /*
-   * ---------------------------------------------------------
-   * Load available time slots whenever the date changes
-   * ---------------------------------------------------------
-   */
 
   useEffect(() => {
     if (!branchId || !serviceId || !selectedDate) {
@@ -162,11 +157,6 @@ export default function SelectTimePage() {
     loadAvailableTimeSlots();
   }, [branchId, serviceId, selectedDate]);
 
-  /*
-   * ---------------------------------------------------------
-   * Navigation
-   * ---------------------------------------------------------
-   */
 
   const handleBack = () => {
     if (branchId) {
@@ -192,12 +182,6 @@ export default function SelectTimePage() {
       `/booking/confirmation?branchId=${branchId}&serviceId=${serviceId}&date=${date}&time=${selectedTime}`,
     );
   };
-
-  /*
-   * ---------------------------------------------------------
-   * Missing booking information
-   * ---------------------------------------------------------
-   */
 
   if (loadingBookingInfo) {
     return (
@@ -268,7 +252,7 @@ export default function SelectTimePage() {
 
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
         {/* Progress */}
-        <BookingProgress />
+        <BookingProgress currentStep={3} />
 
         {/* Booking summary */}
         <section className="rounded-lg border border-[#c6c6cd] bg-white p-4 shadow-[0px_4px_12px_rgba(15,23,42,0.05)]">
@@ -406,86 +390,6 @@ export default function SelectTimePage() {
   );
 }
 
-/* ---------------------------------------------------------
-   Progress
---------------------------------------------------------- */
-
-function BookingProgress() {
-  const steps = [
-    {
-      number: 1,
-      label: "Branch",
-      completed: true,
-    },
-    {
-      number: 2,
-      label: "Service",
-      completed: true,
-    },
-    {
-      number: 3,
-      label: "Time",
-      active: true,
-    },
-    {
-      number: 4,
-      label: "Done",
-      active: false,
-    },
-  ];
-
-  return (
-    <div className="rounded-xl bg-white px-4 py-5 shadow-[0px_4px_12px_rgba(15,23,42,0.05)] md:px-6">
-      <div className="relative flex items-start justify-between">
-        <div className="absolute left-[12.5%] right-[12.5%] top-4 h-0.5 bg-[#e0e3e5]" />
-
-        <div className="absolute left-[12.5%] top-4 h-0.5 w-[50%] bg-black" />
-
-        {steps.map((step) => (
-          <div
-            key={step.number}
-            className="relative z-10 flex flex-col items-center gap-2"
-          >
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                step.completed || step.active
-                  ? "bg-black text-white"
-                  : "bg-[#e0e3e5] text-[#45464d]"
-              } ${
-                step.active
-                  ? "ring-4 ring-[#dae2fd]"
-                  : ""
-              }`}
-            >
-              {step.completed ? (
-                <span className="material-symbols-outlined text-[18px]">
-                  check
-                </span>
-              ) : (
-                step.number
-              )}
-            </div>
-
-            <span
-              className={`text-xs font-medium ${
-                step.active
-                  ? "font-bold text-black"
-                  : "text-[#45464d]"
-              }`}
-            >
-              {step.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------
-   Date helpers
---------------------------------------------------------- */
-
 function getInitialDate() {
   const date = new Date();
 
@@ -520,11 +424,6 @@ function formatDateForUrl(date: Date) {
   ].join("-");
 }
 
-/*
- * Converts:
- * 09:00:00 -> 09:00
- * 13:30:00 -> 13:30
- */
 function formatTime(time: string) {
   return time.substring(0, 5);
 }

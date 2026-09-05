@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import BookingProgress from "../../components/bookingprogress";
 import AppointmentSelector from "../../components/booking/AppointmentSelector";
 import type { AppointmentType } from "../../types/booking";
 import { getServices } from "../../lib/api";
@@ -87,7 +87,7 @@ export default function SelectServicePage() {
       <div className="mx-auto w-full max-w-4xl px-4 pb-28 pt-4 md:px-6 md:pb-10">
 
         {/* Progress */}
-        <BookingProgress />
+        <BookingProgress currentStep={2} />
 
         {/* Heading */}
         <section className="mb-6">
@@ -203,83 +203,5 @@ export default function SelectServicePage() {
       </div>
 
     </main>
-  );
-}
-
-function BookingProgress() {
-  const steps = [
-    {
-      number: 1,
-      label: "Branch",
-      completed: true,
-    },
-    {
-      number: 2,
-      label: "Service",
-      active: true,
-    },
-    {
-      number: 3,
-      label: "Time",
-      active: false,
-    },
-    {
-      number: 4,
-      label: "Done",
-      active: false,
-    },
-  ];
-
-  return (
-    <div className="my-4 rounded-xl bg-white px-4 py-5 md:my-6 md:px-6">
-
-      <div className="relative flex items-start justify-between">
-
-        <div className="absolute left-[12.5%] right-[12.5%] top-4 h-0.5 bg-[#e0e3e5]" />
-
-        <div className="absolute left-[12.5%] top-4 h-0.5 w-[25%] bg-black" />
-
-        {steps.map((step) => (
-          <div
-            key={step.number}
-            className="relative z-10 flex flex-col items-center gap-2"
-          >
-
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                step.completed || step.active
-                  ? "bg-black text-white"
-                  : "bg-[#e0e3e5] text-[#45464d]"
-              } ${
-                step.active
-                  ? "ring-4 ring-[#dae2fd]"
-                  : ""
-              }`}
-            >
-              {step.completed ? (
-                <span className="material-symbols-outlined text-[18px]">
-                  check
-                </span>
-              ) : (
-                step.number
-              )}
-            </div>
-
-            <span
-              className={`text-xs font-medium ${
-                step.active
-                  ? "font-bold text-black"
-                  : "text-[#45464d]"
-              }`}
-            >
-              {step.label}
-            </span>
-
-          </div>
-        ))}
-
-      </div>
-
-    </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import BookingProgress from "../components/bookingprogress";
 import BranchSelector from "../components/booking/BranchSelector";
 import type { Branch } from "../types/booking";
 import { getBranches } from "../lib/api";
@@ -91,7 +91,7 @@ export default function BookingPage() {
       <div className="mx-auto w-full max-w-5xl px-4 pb-28 md:px-6 md:pb-10">
 
         {/* Progress */}
-        <BookingProgress />
+        <BookingProgress currentStep={1} />
 
         {/* Page heading */}
         <section className="mb-6">
@@ -232,58 +232,4 @@ export default function BookingPage() {
   );
 }
 
-function BookingProgress() {
-  const steps = [
-    { number: 1, label: "Branch" },
-    { number: 2, label: "Service" },
-    { number: 3, label: "Time" },
-    { number: 4, label: "Done" },
-  ];
-
-  return (
-    <div className="my-4 rounded-xl bg-white px-4 py-5 shadow-[0px_4px_12px_rgba(15,23,42,0.05)] md:my-6 md:px-6">
-
-      <div className="relative flex items-start justify-between">
-
-        {/* Background line */}
-        <div className="absolute left-[12.5%] right-[12.5%] top-4 h-0.5 bg-[#e0e3e5]" />
-
-        {/* Progress line */}
-        <div className="absolute left-[12.5%] top-4 h-0.5 w-[12.5%] bg-black" />
-
-        {steps.map((step) => {
-          const active = step.number === 1;
-
-          return (
-            <div
-              key={step.number}
-              className="relative z-10 flex flex-col items-center"
-            >
-
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                  active
-                    ? "bg-black text-white"
-                    : "bg-[#e0e3e5] text-[#45464d]"
-                }`}
-              >
-                {step.number}
-              </div>
-
-              <span
-                className={`mt-2 text-[10px] font-semibold tracking-wide ${
-                  active ? "text-black" : "text-[#76777d]"
-                }`}
-              >
-                {step.label}
-              </span>
-
-            </div>
-          );
-        })}
-
-      </div>
-    </div>
-  );
-}
 
