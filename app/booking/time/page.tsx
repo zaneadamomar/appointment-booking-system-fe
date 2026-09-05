@@ -230,25 +230,7 @@ export default function SelectTimePage() {
 
   return (
     <main className="min-h-screen bg-[#f7f9fb] pb-24 text-[#191c1e] md:pb-0">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-[#e0e3e5] bg-white">
-        <div className="mx-auto flex h-14 w-full max-w-4xl items-center px-4 md:px-6">
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label="Go back"
-            className="mr-3 rounded-full p-2 text-[#45464d] transition hover:bg-[#eceef0]"
-          >
-            <span className="material-symbols-outlined">
-              arrow_back
-            </span>
-          </button>
 
-          <h1 className="text-base font-bold tracking-tight text-black">
-            Branch Booking
-          </h1>
-        </div>
-      </header>
 
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
         {/* Progress */}

@@ -66,28 +66,6 @@ export default function BookingPage() {
   return (
     <main className="min-h-screen bg-[#f7f9fb] text-[#191c1e]">
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-[#e0e3e5] bg-white">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 md:px-6">
-
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mr-3 rounded-full p-2 text-[#45464d] transition hover:bg-[#eceef0]"
-            aria-label="Go back"
-          >
-            <span className="material-symbols-outlined">
-              arrow_back
-            </span>
-          </button>
-
-          <h1 className="text-base font-bold tracking-tight text-black">
-            Branch Booking
-          </h1>
-
-        </div>
-      </header>
-
       <div className="mx-auto w-full max-w-5xl px-4 pb-28 md:px-6 md:pb-10">
 
         {/* Progress */}

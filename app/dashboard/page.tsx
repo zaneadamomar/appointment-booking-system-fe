@@ -44,83 +44,8 @@ export default function DashboardPage() {
         );
     }
 
-    const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-
     return (
         <main className="min-h-screen bg-[#f7f9fb] text-[#191c1e]">
-
-            {/* Navbar */}
-            <nav className="bg-white border-b border-[#e5e7eb]">
-
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-                    {/* Logo */}
-                    <div className="flex items-center gap-3">
-
-                        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-                            <span
-                                className="material-symbols-outlined text-white"
-                                style={{
-                                    fontSize: "22px",
-                                    fontVariationSettings: "'FILL' 1",
-                                }}
-                            >
-                                shield
-                            </span>
-                        </div>
-
-                        <div>
-                            <h1 className="font-bold text-lg text-black">
-                                Reliant
-                            </h1>
-
-                            <p className="text-xs text-[#76777d]">
-                                Appointment System
-                            </p>
-                        </div>
-
-                    </div>
-
-                    {/* User */}
-                    <div className="flex items-center gap-4">
-
-                        <div className="hidden sm:block text-right">
-                            <p className="text-sm font-semibold">
-                                {user.firstName} {user.lastName}
-                            </p>
-
-                            <p className="text-xs text-[#76777d]">
-                                {user.email}
-                            </p>
-                        </div>
-
-                        {/* User Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-[#131b2e] text-white flex items-center justify-center">
-                            <span className="text-sm font-semibold">
-                                {initials}
-                            </span>
-                        </div>
-
-                        {/* Logout */}
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="flex items-center justify-center w-10 h-10 rounded-lg text-[#45464d] hover:bg-[#f1f2f4] hover:text-black transition-colors"
-                            title="Logout"
-                        >
-                            <span
-                                className="material-symbols-outlined"
-                                style={{ fontSize: "22px" }}
-                            >
-                                logout
-                            </span>
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </nav>
 
             {/* Dashboard */}
             <div className="max-w-7xl mx-auto px-6 py-8">
