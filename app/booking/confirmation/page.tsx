@@ -2,17 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
-import {
-  getBranches,
-  getServices,
-  createBooking,
-} from "../../lib/api";
-import type {
-  Branch,
-  AppointmentType,
-  CreateBookingResponse,
-} from "../../types/booking";
+import { getBranches,getServices,createBooking,} from "../../lib/api";
+import type { Branch,AppointmentType,CreateBookingResponse,} from "../../types/booking";
 
 
 export default function ConfirmationPage() {
@@ -31,52 +22,80 @@ export default function ConfirmationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-
-  // Tracks which exact booking request we've already fired,
-  // so React Strict Mode's double-invoke (or an accidental remount)
-  // can't create a duplicate booking for the same params.
   const lastRequestKeyRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    const requestKey = `${branchId}-${serviceId}-${date}-${time}`;
+useEffect(() => {
+  const requestKey = `${branchId}-${serviceId}-${date}-${time}`;
 
-    if (lastRequestKeyRef.current === requestKey) {
-      return;
-    }
-    lastRequestKeyRef.current = requestKey;
+  if (lastRequestKeyRef.current === requestKey) {
+    return;
+  }
+  lastRequestKeyRef.current = requestKey;
 
-    let cancelled = false;
+  const createNewBooking = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    const createNewBooking = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        if (!branchId || !serviceId || !date || !time) {
-          throw new Error(
-            "Booking information is missing. Please start the booking process again."
-          );
-        }
-
-        // ...rest of your existing logic unchanged...
-      } catch (err) {
-        console.error("Booking creation error:", err);
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Unable to create your booking.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+      if (!branchId || !serviceId || !date || !time) {
+        throw new Error(
+          "Booking information is missing. Please start the booking process again."
+        );
       }
-    };
 
-    createNewBooking();
+        // TODO: replace with your real source of the logged-in user's id
+     const storedUser = sessionStorage.getItem("currentUser");
 
-    return () => {
-      cancelled = true;
-    };
-  }, [branchId, serviceId, date, time]);
+        const currentUser = storedUser ? JSON.parse(storedUser) : null;
+
+        const userId = currentUser?.userId;
+
+      const [branches, services] = await Promise.all([
+        getBranches(),
+        getServices(),
+      ]);
+
+      const selectedBranch = branches.find((item) => item.branchId === branchId);
+      const selectedService = services.find((item) => item.serviceId === serviceId);
+
+      if (!selectedBranch || !selectedService) {
+        throw new Error("Booking information could not be found.");
+      }
+
+      if (lastRequestKeyRef.current === requestKey) {
+        setBranch(selectedBranch);
+        setService(selectedService);
+      }
+
+      const result = await createBooking({
+        userId,
+        branchId,
+        serviceId,
+        bookingDate: date,
+        startTime: time,
+      });
+
+      if (result.resultCode !== 0) {
+        throw new Error(result.resultMessage || "Unable to create your booking.");
+      }
+
+      if (lastRequestKeyRef.current === requestKey) {
+        setBooking(result);
+      }
+    } catch (err) {
+      console.error("Booking creation error:", err);
+      if (lastRequestKeyRef.current === requestKey) {
+        setError(err instanceof Error ? err.message : "Unable to create your booking.");
+      }
+    } finally {
+      if (lastRequestKeyRef.current === requestKey) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  createNewBooking();
+}, [branchId, serviceId, date, time]);
 
   const handleCopyReference = async () => {
     if (!booking?.bookingId) {
