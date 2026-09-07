@@ -87,7 +87,11 @@ export default function DashboardPage() {
                     </button>
 
                     {/* My Appointments */}
-                    <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
+                      <button
+                        onClick={() => router.push("/mybookings")}
+                        className="text-left bg-white rounded-xl border border-[#e5e7eb] p-6 hover:shadow-md transition-shadow"
+                    >
+                    
 
                         <div className="w-12 h-12 rounded-lg bg-[#eef1f5] flex items-center justify-center mb-5">
                             <span className="material-symbols-outlined text-[#131b2e]">
@@ -103,7 +107,8 @@ export default function DashboardPage() {
                             View and manage your upcoming appointments.
                         </p>
 
-                    </div>
+                  
+                    </button>
 
                     {/* Account */}
                     <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">

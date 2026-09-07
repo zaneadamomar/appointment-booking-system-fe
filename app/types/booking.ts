@@ -45,3 +45,20 @@ export interface CreateBookingResponse {
     resultMessage: string;
     resultCode: number;
 }
+
+export interface UserBooking {
+  bookingId: string;
+  userId: string;
+  userName: string;
+  branchId: string;
+  branchName: string;
+  serviceId: string;
+  serviceName: string;
+  durationMinutes: number;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  statusId: number;
+  status: "Confirmed" | "Completed" | "Cancelled";
+  createdDate: string;
+}

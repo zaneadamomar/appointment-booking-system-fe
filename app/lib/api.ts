@@ -1,55 +1,55 @@
 import { User } from "../types/user";
-import type { Branch, AppointmentType, AvailableTimeSlot, CreateBookingRequest, CreateBookingResponse } from "../types/booking";
+import type { Branch, AppointmentType, AvailableTimeSlot, CreateBookingRequest, CreateBookingResponse, UserBooking } from "../types/booking";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getUsers(): Promise<User[]> {
-    const response = await fetch(`${API_URL}/api/GetUsers`, {
-        method: "GET",
-        headers: {
-            Accept: "*/*",
-        },
-    });
+  const response = await fetch(`${API_URL}/api/GetUsers`, {
+    method: "GET",
+    headers: {
+      Accept: "*/*",
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error(`Failed to retrieve users. Status: ${response.status}`);
-    }
+  if (!response.ok) {
+    throw new Error(`Failed to retrieve users. Status: ${response.status}`);
+  }
 
-    return response.json();
+  return response.json();
 }
 
 export async function getBranches(): Promise<Branch[]> {
-    const response = await fetch(`${API_URL}/api/GetBranch`, {
-        method: "GET",
-        headers: {
-            Accept: "*/*",
-        },
-    });
+  const response = await fetch(`${API_URL}/api/GetBranch`, {
+    method: "GET",
+    headers: {
+      Accept: "*/*",
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error(
-            `Failed to retrieve branches. Status: ${response.status}`
-        );
-    }
+  if (!response.ok) {
+    throw new Error(
+      `Failed to retrieve branches. Status: ${response.status}`
+    );
+  }
 
-    return response.json();
+  return response.json();
 }
 
 export async function getServices(): Promise<AppointmentType[]> {
-    const response = await fetch(`${API_URL}/api/GetService`, {
-        method: "GET",
-        headers: {
-            Accept: "*/*",
-        },
-    });
+  const response = await fetch(`${API_URL}/api/GetService`, {
+    method: "GET",
+    headers: {
+      Accept: "*/*",
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error(
-            `Failed to retrieve services. Status: ${response.status}`
-        );
-    }
+  if (!response.ok) {
+    throw new Error(
+      `Failed to retrieve services. Status: ${response.status}`
+    );
+  }
 
-    return response.json();
+  return response.json();
 }
 
 export async function getAvailableTimeSlots(
@@ -81,22 +81,40 @@ export async function getAvailableTimeSlots(
 }
 
 export async function createBooking(
-    booking: CreateBookingRequest
+  booking: CreateBookingRequest
 ): Promise<CreateBookingResponse> {
-    const response = await fetch(`${API_URL}/api/CreateBooking`, {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(booking),
-    });
+  const response = await fetch(`${API_URL}/api/CreateBooking`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(booking),
+  });
 
-    if (!response.ok) {
-        throw new Error(
-            `Failed to create booking. Status: ${response.status}`
-        );
+  if (!response.ok) {
+    throw new Error(
+      `Failed to create booking. Status: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+export async function getUserBookings(userId: string): Promise<UserBooking[]> {
+  const response = await fetch(
+    `${API_URL}/api/GetUserBooking?UserId=${userId}`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "*/*",
+      },
     }
+  );
 
-    return response.json();
+  if (!response.ok) {
+    throw new Error(`Failed to load bookings. Status: ${response.status}`);
+  }
+
+  return response.json();
 }

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getBranches,getServices,createBooking,} from "../../lib/api";
-import type { Branch,AppointmentType,CreateBookingResponse,} from "../../types/booking";
+import { getBranches, getServices, createBooking, } from "../../lib/api";
+import type { Branch, AppointmentType, CreateBookingResponse, } from "../../types/booking";
 
 
 export default function ConfirmationPage() {
@@ -24,78 +24,78 @@ export default function ConfirmationPage() {
   const [copied, setCopied] = useState(false);
   const lastRequestKeyRef = useRef<string | null>(null);
 
-useEffect(() => {
-  const requestKey = `${branchId}-${serviceId}-${date}-${time}`;
+  useEffect(() => {
+    const requestKey = `${branchId}-${serviceId}-${date}-${time}`;
 
-  if (lastRequestKeyRef.current === requestKey) {
-    return;
-  }
-  lastRequestKeyRef.current = requestKey;
+    if (lastRequestKeyRef.current === requestKey) {
+      return;
+    }
+    lastRequestKeyRef.current = requestKey;
 
-  const createNewBooking = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    const createNewBooking = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      if (!branchId || !serviceId || !date || !time) {
-        throw new Error(
-          "Booking information is missing. Please start the booking process again."
-        );
-      }
+        if (!branchId || !serviceId || !date || !time) {
+          throw new Error(
+            "Booking information is missing. Please start the booking process again."
+          );
+        }
 
-        // TODO: replace with your real source of the logged-in user's id
-     const storedUser = sessionStorage.getItem("currentUser");
+
+        const storedUser = sessionStorage.getItem("currentUser");
 
         const currentUser = storedUser ? JSON.parse(storedUser) : null;
 
         const userId = currentUser?.userId;
 
-      const [branches, services] = await Promise.all([
-        getBranches(),
-        getServices(),
-      ]);
+        const [branches, services] = await Promise.all([
+          getBranches(),
+          getServices(),
+        ]);
 
-      const selectedBranch = branches.find((item) => item.branchId === branchId);
-      const selectedService = services.find((item) => item.serviceId === serviceId);
+        const selectedBranch = branches.find((item) => item.branchId === branchId);
+        const selectedService = services.find((item) => item.serviceId === serviceId);
 
-      if (!selectedBranch || !selectedService) {
-        throw new Error("Booking information could not be found.");
+        if (!selectedBranch || !selectedService) {
+          throw new Error("Booking information could not be found.");
+        }
+
+        if (lastRequestKeyRef.current === requestKey) {
+          setBranch(selectedBranch);
+          setService(selectedService);
+        }
+
+        const result = await createBooking({
+          userId,
+          branchId,
+          serviceId,
+          bookingDate: date,
+          startTime: time,
+        });
+
+        if (result.resultCode !== 0) {
+          throw new Error(result.resultMessage || "Unable to create your booking.");
+        }
+
+        if (lastRequestKeyRef.current === requestKey) {
+          setBooking(result);
+        }
+      } catch (err) {
+        console.error("Booking creation error:", err);
+        if (lastRequestKeyRef.current === requestKey) {
+          setError(err instanceof Error ? err.message : "Unable to create your booking.");
+        }
+      } finally {
+        if (lastRequestKeyRef.current === requestKey) {
+          setIsLoading(false);
+        }
       }
+    };
 
-      if (lastRequestKeyRef.current === requestKey) {
-        setBranch(selectedBranch);
-        setService(selectedService);
-      }
-
-      const result = await createBooking({
-        userId,
-        branchId,
-        serviceId,
-        bookingDate: date,
-        startTime: time,
-      });
-
-      if (result.resultCode !== 0) {
-        throw new Error(result.resultMessage || "Unable to create your booking.");
-      }
-
-      if (lastRequestKeyRef.current === requestKey) {
-        setBooking(result);
-      }
-    } catch (err) {
-      console.error("Booking creation error:", err);
-      if (lastRequestKeyRef.current === requestKey) {
-        setError(err instanceof Error ? err.message : "Unable to create your booking.");
-      }
-    } finally {
-      if (lastRequestKeyRef.current === requestKey) {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  createNewBooking();
-}, [branchId, serviceId, date, time]);
+    createNewBooking();
+  }, [branchId, serviceId, date, time]);
 
   const handleCopyReference = async () => {
     if (!booking?.bookingId) {
