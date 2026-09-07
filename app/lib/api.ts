@@ -1,5 +1,5 @@
 import { User } from "../types/user";
-import type { Branch, AppointmentType, AvailableTimeSlot, CreateBookingRequest, BookingResponse, UserBooking, CancelBookingRequest } from "../types/booking";
+import type { Branch, AppointmentType, AvailableTimeSlot, BookingRequest, BookingResponse, UserBooking, CancelBookingRequest } from "../types/booking";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -81,7 +81,7 @@ export async function getAvailableTimeSlots(
 }
 
 export async function createBooking(
-  booking: CreateBookingRequest
+  booking: BookingRequest
 ): Promise<BookingResponse> {
   const response = await fetch(`${API_URL}/api/CreateBooking`, {
     method: "POST",
@@ -131,6 +131,25 @@ export async function cancelBooking(request: CancelBookingRequest): Promise<Book
 
   if (!response.ok) {
     throw new Error(`Failed to cancel booking. Status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function rescheduleBooking(
+  request: BookingRequest
+): Promise<BookingResponse> {
+  const response = await fetch(`${API_URL}/api/RescheduleBooking`, {
+    method: "PUT",
+    headers: {
+      Accept: "*/*",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to reschedule booking. Status: ${response.status}`);
   }
 
   return response.json();

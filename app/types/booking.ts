@@ -1,11 +1,11 @@
 export interface Branch {
-    branchId: string;
-    branchName: string;
-    addressLine1: string;
-    addressLine2: string;
-    city: string;
-    postalCode: string;
-    isActive: boolean;
+  branchId: string;
+  branchName: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  postalCode: string;
+  isActive: boolean;
 }
 
 export interface AppointmentType {
@@ -32,18 +32,19 @@ export interface Booking {
   status: "Confirmed" | "Completed" | "Cancelled";
 }
 
-export interface CreateBookingRequest {
-    userId: string;
-    branchId: string;
-    serviceId: string;
-    bookingDate: string;
-    startTime: string;
+export interface BookingRequest {
+  bookingId?: string;
+  userId: string;
+  branchId: string;
+  serviceId: string;
+  bookingDate: string;
+  startTime: string;
 }
 
 export interface BookingResponse {
-    bookingId: string;
-    resultMessage: string;
-    resultCode: number;
+  bookingId: string;
+  resultMessage: string;
+  resultCode: number;
 }
 
 export interface UserBooking {

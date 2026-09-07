@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getBranches, getServices, createBooking, } from "../../lib/api";
+import { getBranches, getServices, createBooking, rescheduleBooking } from "../../lib/api";
 import type { Branch, AppointmentType, BookingResponse, } from "../../types/booking";
 
 
@@ -14,6 +14,7 @@ export default function ConfirmationPage() {
   const serviceId = searchParams.get("serviceId");
   const date = searchParams.get("date");
   const time = searchParams.get("time");
+  const rescheduleBookingId = searchParams.get("rescheduleBookingId");
 
   const [branch, setBranch] = useState<Branch | null>(null);
   const [service, setService] = useState<AppointmentType | null>(null);
@@ -25,7 +26,7 @@ export default function ConfirmationPage() {
   const lastRequestKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const requestKey = `${branchId}-${serviceId}-${date}-${time}`;
+    const requestKey = `${rescheduleBookingId ?? "new"}-${branchId}-${serviceId}-${date}-${time}`;
 
     if (lastRequestKeyRef.current === requestKey) {
       return;
@@ -43,12 +44,13 @@ export default function ConfirmationPage() {
           );
         }
 
-
         const storedUser = sessionStorage.getItem("currentUser");
-
         const currentUser = storedUser ? JSON.parse(storedUser) : null;
-
         const userId = currentUser?.userId;
+
+        if (!userId) {
+          throw new Error("You must be signed in to confirm a booking.");
+        }
 
         const [branches, services] = await Promise.all([
           getBranches(),
@@ -67,16 +69,25 @@ export default function ConfirmationPage() {
           setService(selectedService);
         }
 
-        const result = await createBooking({
-          userId,
-          branchId,
-          serviceId,
-          bookingDate: date,
-          startTime: time,
-        });
+        const result = rescheduleBookingId
+          ? await rescheduleBooking({
+            bookingId: rescheduleBookingId,
+            userId,
+            branchId,
+            serviceId,
+            bookingDate: date,
+            startTime: time,
+          })
+          : await createBooking({
+            userId,
+            branchId,
+            serviceId,
+            bookingDate: date,
+            startTime: time,
+          });
 
         if (result.resultCode !== 0) {
-          throw new Error(result.resultMessage || "Unable to create your booking.");
+          throw new Error(result.resultMessage || "Unable to complete your booking.");
         }
 
         if (lastRequestKeyRef.current === requestKey) {
@@ -93,9 +104,8 @@ export default function ConfirmationPage() {
         }
       }
     };
-
     createNewBooking();
-  }, [branchId, serviceId, date, time]);
+  }, [branchId, serviceId, date, time, rescheduleBookingId]);
 
   const handleCopyReference = async () => {
     if (!booking?.bookingId) {

@@ -94,50 +94,50 @@ export default function MyBookingsPage() {
         return { upcoming: upcomingList, past: pastList };
     }, [bookings]);
 
-const handleCancelBooking = async (bookingId: string) => {
-  const storedUser = sessionStorage.getItem("currentUser");
-  const currentUser = storedUser ? JSON.parse(storedUser) : null;
-  const userId = currentUser?.userId;
+    const handleCancelBooking = async (bookingId: string) => {
+        const storedUser = sessionStorage.getItem("currentUser");
+        const currentUser = storedUser ? JSON.parse(storedUser) : null;
+        const userId = currentUser?.userId;
 
-  if (!userId) {
-    setCancelError("You must be signed in to cancel a booking.");
-    return;
-  }
+        if (!userId) {
+            setCancelError("You must be signed in to cancel a booking.");
+            return;
+        }
 
-  const confirmed = window.confirm(
-    "Are you sure you want to cancel this appointment?"
-  );
-  if (!confirmed) {
-    return;
-  }
+        const confirmed = window.confirm(
+            "Are you sure you want to cancel this appointment?"
+        );
+        if (!confirmed) {
+            return;
+        }
 
-  try {
-    setCancellingId(bookingId);
-    setCancelError(null);
+        try {
+            setCancellingId(bookingId);
+            setCancelError(null);
 
-    const result = await cancelBooking({ bookingId, userId });
+            const result = await cancelBooking({ bookingId, userId });
 
-    if (result.resultCode !== 0) {
-      throw new Error(result.resultMessage || "Unable to cancel booking.");
-    }
+            if (result.resultCode !== 0) {
+                throw new Error(result.resultMessage || "Unable to cancel booking.");
+            }
 
-    // Update locally instead of refetching — flip status to Cancelled
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.bookingId === bookingId
-          ? { ...b, status: "Cancelled", statusId: 3 }
-          : b
-      )
-    );
-  } catch (err) {
-    console.error("Cancel booking error:", err);
-    setCancelError(
-      err instanceof Error ? err.message : "Unable to cancel booking."
-    );
-  } finally {
-    setCancellingId(null);
-  }
-};
+            // Update locally instead of refetching — flip status to Cancelled
+            setBookings((prev) =>
+                prev.map((b) =>
+                    b.bookingId === bookingId
+                        ? { ...b, status: "Cancelled", statusId: 3 }
+                        : b
+                )
+            );
+        } catch (err) {
+            console.error("Cancel booking error:", err);
+            setCancelError(
+                err instanceof Error ? err.message : "Unable to cancel booking."
+            );
+        } finally {
+            setCancellingId(null);
+        }
+    };
 
     return (
         <main className="min-h-screen bg-[#f7f9fb] pb-24 text-[#191c1e]">
@@ -209,10 +209,10 @@ const handleCancelBooking = async (bookingId: string) => {
                 )}
 
                 {cancelError && (
-  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-    {cancelError}
-  </div>
-)}
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {cancelError}
+                    </div>
+                )}
 
                 {!isLoading && !error && (
                     <>
@@ -226,13 +226,18 @@ const handleCancelBooking = async (bookingId: string) => {
                             ) : (
                                 <div className="flex flex-col gap-4">
                                     {upcoming.map((booking) => (
-                                    <BookingCard
-                                        key={booking.bookingId}
-                                        booking={booking}
-                                        highlighted={isTomorrowOrToday(booking)}
-                                        onCancel={() => handleCancelBooking(booking.bookingId)}
-                                        isCancelling={cancellingId === booking.bookingId}
-                                    />
+                                        <BookingCard
+                                            key={booking.bookingId}
+                                            booking={booking}
+                                            highlighted={isTomorrowOrToday(booking)}
+                                            onCancel={() => handleCancelBooking(booking.bookingId)}
+                                            onReschedule={() =>
+                                                router.push(
+                                                    `/booking/time?branchId=${booking.branchId}&serviceId=${booking.serviceId}&rescheduleBookingId=${booking.bookingId}`
+                                                )
+                                            }
+                                            isCancelling={cancellingId === booking.bookingId}
+                                        />
                                     ))}
                                 </div>
                             )
@@ -287,14 +292,15 @@ const handleCancelBooking = async (bookingId: string) => {
 }
 
 interface BookingCardProps {
-  booking: UserBooking;
-  highlighted: boolean;
-  onCancel: () => void;
-  isCancelling: boolean;
+    booking: UserBooking;
+    highlighted: boolean;
+    onCancel: () => void;
+    onReschedule: () => void;
+    isCancelling: boolean;
 }
 
 
-function BookingCard({ booking, highlighted, onCancel }: BookingCardProps) {
+function BookingCard({ booking, highlighted, onCancel, onReschedule, isCancelling }: BookingCardProps) {
     return (
         <div
             className={`relative flex flex-col gap-4 overflow-hidden rounded-xl border border-[#e0e3e5] bg-white p-4 shadow-sm ${highlighted ? "shadow-md" : ""
@@ -362,16 +368,15 @@ function BookingCard({ booking, highlighted, onCancel }: BookingCardProps) {
                 <div className="grid grid-cols-2 gap-2">
                     <button
                         type="button"
+                        onClick={onReschedule}
                         className="flex h-11 items-center justify-center gap-1.5 rounded-lg bg-[#eceef0] px-3 text-sm font-semibold transition hover:bg-[#e0e3e5]"
                     >
-                        <span className="material-symbols-outlined text-[18px]">
-                            calendar_month
-                        </span>
+                        <span className="material-symbols-outlined text-[18px]">calendar_month</span>
                         Reschedule
                     </button>
                     <button
                         type="button"
-                         onClick={onCancel}
+                        onClick={onCancel}
                         className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
 
                     >

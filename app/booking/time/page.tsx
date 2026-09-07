@@ -55,12 +55,6 @@ export default function SelectTimePage() {
     return getBookingDates(14);
   }, []);
 
-  /*
-   * ---------------------------------------------------------
-   * Load branch and service information
-   * ---------------------------------------------------------
-   */
-
   useEffect(() => {
     if (!branchId || !serviceId) {
       setLoadingBookingInfo(false);
@@ -177,9 +171,16 @@ export default function SelectTimePage() {
     }
 
     const date = formatDateForUrl(selectedDate);
+    const rescheduleBookingId = searchParams.get("rescheduleBookingId");
+    if (rescheduleBookingId) {
+      router.push(
+        `/booking/confirmation?rescheduleBookingId=${rescheduleBookingId}&branchId=${branchId}&serviceId=${serviceId}&date=${date}&time=${selectedTime}`
+      );
+      return;
+    }
 
     router.push(
-      `/booking/confirmation?branchId=${branchId}&serviceId=${serviceId}&date=${date}&time=${selectedTime}`,
+      `/booking/confirmation?branchId=${branchId}&serviceId=${serviceId}&date=${date}&time=${selectedTime}`
     );
   };
 
