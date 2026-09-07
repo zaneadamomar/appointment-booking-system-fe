@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Reliant",
-  description: "...",
+  title: "Capitec",
+  description: "Appointment Booking System",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

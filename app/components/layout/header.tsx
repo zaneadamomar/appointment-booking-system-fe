@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { User } from "../../types/user";
-
+import Image from "next/image";
 interface NavbarProps {
   mode?: "dashboard" | "booking";
   title?: string;
@@ -66,16 +66,16 @@ export default function Navbar({ mode = "dashboard", title, onBack }: NavbarProp
           ) : (
             <>
               <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-                <span
-                  className="material-symbols-outlined text-white"
-                  style={{ fontSize: "22px", fontVariationSettings: "'FILL' 1" }}
-                >
-                  shield
-                </span>
+                <Image
+                                            src="/capitec_bank_long_logo.png"
+                                            width={60} 
+                                            height={60} 
+                                            alt="Capitec Bank Logo" 
+                                        />  
               </div>
 
               <div>
-                <h1 className="font-bold text-lg text-black">Reliant</h1>
+                <h1 className="font-bold text-lg text-black">Capitec</h1>
                 <p className="text-xs text-[#76777d]">Appointment System</p>
               </div>
             </>

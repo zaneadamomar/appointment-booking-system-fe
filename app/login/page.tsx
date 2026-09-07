@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUsers } from "../lib/api";
 import { User } from "../types/user";
+import Image from "next/image";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -74,19 +75,16 @@ export default function LoginPage() {
                 <div className="text-center mb-8 flex flex-col items-center justify-center">
 
                     <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center shadow-lg mb-4 transition-transform duration-300 hover:scale-105">
-                        <span
-                            className="material-symbols-outlined text-white"
-                            style={{
-                                fontSize: "32px",
-                                fontVariationSettings: "'FILL' 1",
-                            }}
-                        >
-                            shield
-                        </span>
+                        <Image
+                            src="/capitec_bank_long_logo.png"
+                            width={60} 
+                            height={60} 
+                            alt="Capitec Bank Logo" 
+                        />
                     </div>
 
                     <h1 className="text-3xl md:text-[32px] font-bold tracking-tight text-black">
-                        Reliant
+                        Capitec
                     </h1>
 
                 </div>
