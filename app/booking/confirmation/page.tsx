@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getBranches, getServices, createBooking, } from "../../lib/api";
-import type { Branch, AppointmentType, CreateBookingResponse, } from "../../types/booking";
+import type { Branch, AppointmentType, BookingResponse, } from "../../types/booking";
 
 
 export default function ConfirmationPage() {
@@ -17,7 +17,7 @@ export default function ConfirmationPage() {
 
   const [branch, setBranch] = useState<Branch | null>(null);
   const [service, setService] = useState<AppointmentType | null>(null);
-  const [booking, setBooking] = useState<CreateBookingResponse | null>(null);
+  const [booking, setBooking] = useState<BookingResponse | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

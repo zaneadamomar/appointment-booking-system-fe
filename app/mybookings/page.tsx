@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUserBookings } from "../lib/api";
 import type { UserBooking } from "../types/booking";
+import { getUserBookings, cancelBooking } from "../lib/api";
 
 type TabKey = "upcoming" | "past";
 
@@ -14,6 +14,8 @@ export default function MyBookingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabKey>("upcoming");
+    const [cancellingId, setCancellingId] = useState<string | null>(null);
+    const [cancelError, setCancelError] = useState<string | null>(null);
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem("currentUser");
@@ -92,10 +94,50 @@ export default function MyBookingsPage() {
         return { upcoming: upcomingList, past: pastList };
     }, [bookings]);
 
-    const handleCancelBooking = (bookingId: string) => {
-        // TODO: wire up once the CancelBooking endpoint is ready
-        console.log("Cancel booking", bookingId);
-    };
+const handleCancelBooking = async (bookingId: string) => {
+  const storedUser = sessionStorage.getItem("currentUser");
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const userId = currentUser?.userId;
+
+  if (!userId) {
+    setCancelError("You must be signed in to cancel a booking.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Are you sure you want to cancel this appointment?"
+  );
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    setCancellingId(bookingId);
+    setCancelError(null);
+
+    const result = await cancelBooking({ bookingId, userId });
+
+    if (result.resultCode !== 0) {
+      throw new Error(result.resultMessage || "Unable to cancel booking.");
+    }
+
+    // Update locally instead of refetching — flip status to Cancelled
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.bookingId === bookingId
+          ? { ...b, status: "Cancelled", statusId: 3 }
+          : b
+      )
+    );
+  } catch (err) {
+    console.error("Cancel booking error:", err);
+    setCancelError(
+      err instanceof Error ? err.message : "Unable to cancel booking."
+    );
+  } finally {
+    setCancellingId(null);
+  }
+};
 
     return (
         <main className="min-h-screen bg-[#f7f9fb] pb-24 text-[#191c1e]">
@@ -166,6 +208,12 @@ export default function MyBookingsPage() {
                     </div>
                 )}
 
+                {cancelError && (
+  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    {cancelError}
+  </div>
+)}
+
                 {!isLoading && !error && (
                     <>
                         {activeTab === "upcoming" ? (
@@ -178,12 +226,13 @@ export default function MyBookingsPage() {
                             ) : (
                                 <div className="flex flex-col gap-4">
                                     {upcoming.map((booking) => (
-                                        <BookingCard
-                                            key={booking.bookingId}
-                                            booking={booking}
-                                            highlighted={isTomorrowOrToday(booking)}
-                                            onCancel={() => handleCancelBooking(booking.bookingId)}
-                                        />
+                                    <BookingCard
+                                        key={booking.bookingId}
+                                        booking={booking}
+                                        highlighted={isTomorrowOrToday(booking)}
+                                        onCancel={() => handleCancelBooking(booking.bookingId)}
+                                        isCancelling={cancellingId === booking.bookingId}
+                                    />
                                     ))}
                                 </div>
                             )
@@ -238,10 +287,12 @@ export default function MyBookingsPage() {
 }
 
 interface BookingCardProps {
-    booking: UserBooking;
-    highlighted: boolean;
-    onCancel: () => void;
+  booking: UserBooking;
+  highlighted: boolean;
+  onCancel: () => void;
+  isCancelling: boolean;
 }
+
 
 function BookingCard({ booking, highlighted, onCancel }: BookingCardProps) {
     return (
@@ -264,7 +315,7 @@ function BookingCard({ booking, highlighted, onCancel }: BookingCardProps) {
                     {booking.status}
                 </span>
                 <span className="text-xs text-[#76777d]">
-                    Ref: #{formatReference(booking.bookingId)}
+                    Ref: #{booking.bookingId}
                 </span>
             </div>
 
@@ -320,20 +371,9 @@ function BookingCard({ booking, highlighted, onCancel }: BookingCardProps) {
                     </button>
                     <button
                         type="button"
-                        className="flex h-11 items-center justify-center gap-1.5 rounded-lg bg-[#006c49] px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#005236]"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">
-                            directions
-                        </span>
-                        Directions
-                    </button>
-                </div>
+                         onClick={onCancel}
+                        className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
 
-                <div className="flex justify-center pt-1">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="flex items-center gap-1 py-1 text-xs font-medium text-red-700 hover:underline"
                     >
                         <span className="material-symbols-outlined text-[16px]">close</span>
                         Cancel Appointment
@@ -477,9 +517,6 @@ function formatTimeRange(booking: UserBooking) {
     return `${formatTime(booking.startTime)} – ${formatTime(booking.endTime)} (${booking.durationMinutes} mins)`;
 }
 
-function formatReference(bookingId: string) {
-    return bookingId.slice(0, 8).toUpperCase();
-}
 
 function getStatusStyles(booking: UserBooking) {
     switch (booking.status) {

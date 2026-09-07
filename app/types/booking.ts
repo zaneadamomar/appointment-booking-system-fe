@@ -40,7 +40,7 @@ export interface CreateBookingRequest {
     startTime: string;
 }
 
-export interface CreateBookingResponse {
+export interface BookingResponse {
     bookingId: string;
     resultMessage: string;
     resultCode: number;
@@ -61,4 +61,9 @@ export interface UserBooking {
   statusId: number;
   status: "Confirmed" | "Completed" | "Cancelled";
   createdDate: string;
+}
+
+export interface CancelBookingRequest {
+  bookingId: string;
+  userId: string;
 }
