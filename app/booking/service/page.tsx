@@ -1,13 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import BookingProgress from "../../components/bookingprogress";
 import AppointmentSelector from "../../components/booking/AppointmentSelector";
 import type { AppointmentType } from "../../types/booking";
 import { getServices } from "../../lib/api";
 
-function SelectServicePage() {
+export default function SelectServicePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -178,34 +178,7 @@ function SelectServicePage() {
         </div>
 
       </div>
+
     </main>
-  );
-}
-
-export default function ServicePage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen items-center justify-center bg-[#f7f9fb] px-4">
-          <div className="w-full max-w-md rounded-xl border border-[#e0e3e5] bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f8f1]">
-              <span className="material-symbols-outlined animate-spin text-[32px] text-[#006c49]">
-                progress_activity
-              </span>
-            </div>
-
-            <h1 className="mt-6 text-xl font-semibold text-black">
-              Loading services...
-            </h1>
-
-            <p className="mt-2 text-sm leading-6 text-[#76777d]">
-              Please wait while we load the available services.
-            </p>
-          </div>
-        </main>
-      }
-    >
-      <SelectServicePage />
-    </Suspense>
   );
 }

@@ -1,52 +1,29 @@
 # ==========================================================
-# DEPENDENCIES
+# DEVELOPMENT
 # ==========================================================
 
-FROM node:20-alpine AS deps
+FROM node:20-alpine
 
 WORKDIR /app
 
+# Copy package files first for Docker layer caching
 COPY package.json package-lock.json ./
 
+# Install dependencies
 RUN npm ci
 
-
-# ==========================================================
-# BUILD
-# ==========================================================
-
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-
+# Copy application source
 COPY . .
 
+# API URL
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN npm run build
-
-
-# ==========================================================
-# PRODUCTION
-# ==========================================================
-
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-
-ENV NODE_ENV=production
+# Next.js development server
+ENV NODE_ENV=development
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
 EXPOSE 3000
 
-USER node
-
-CMD ["node", "server.js"]
+CMD ["npm", "run", "dev"]
